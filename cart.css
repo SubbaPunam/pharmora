@@ -1,0 +1,135 @@
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f1f5f9;
+}
+
+/* Navbar */
+
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 40px;
+    background: white;
+}
+
+.logo {
+    font-size: 24px;
+    font-weight: bold;
+}
+
+nav a {
+    margin: 0 20px;
+    text-decoration: none;
+    color: black;
+}
+
+.login-btn {
+    border: 1px solid gray;
+    padding: 8px 15px;
+    border-radius: 20px;
+    text-decoration: none;
+}
+
+/* Cart */
+
+.cart-section {
+    padding: 40px;
+}
+
+.cart-section h1 {
+    font-size: 40px;
+}
+
+.cart-layout {
+    display: flex;
+    gap: 30px;
+    margin-top: 30px;
+}
+
+/* Cart Items */
+
+.cart-items {
+    flex: 2;
+    background: white;
+    padding: 25px;
+    border-radius: 10px;
+}
+
+.cart-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.cart-item h3 {
+    margin: 0;
+}
+
+.qty {
+    color: green;
+}
+
+.price {
+    color: green;
+    font-weight: bold;
+}
+
+.remove-btn {
+    padding: 5px 10px;
+}
+
+/* Summary */
+
+.summary {
+    flex: 1;
+    background: white;
+    padding: 25px;
+    border-radius: 10px;
+}
+
+.summary h2 {
+    margin-bottom: 20px;
+}
+
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    margin: 10px 0;
+}
+
+.free {
+    color: green;
+}
+
+.discount {
+    color: red;
+}
+
+.total {
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.checkout-btn {
+    width: 100%;
+    padding: 15px;
+    margin-top: 20px;
+    background: #0f9d9d;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.continue-btn {
+    width: 100%;
+    padding: 15px;
+    margin-top: 10px;
+    background: #e5e7eb;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+}

@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Pharmora | Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="dashboard.css">
+  <style>
+    /* ── Tab panels ── */
+    .panel { display:none; }
+    .panel.active { display:block; }
+
+    /* ── Orders table panel ── */
+    .orders-panel-header {
+      display:flex; align-items:center; justify-content:space-between;
+      margin-bottom:24px;
+    }
+    .orders-panel-header h2 { font-family:'Syne',sans-serif; font-size:22px; font-weight:800; color:#0f172a; }
+
+    .orders-loading {
+      text-align:center; padding:60px 20px; color:#64748b; font-size:15px;
+    }
+    .orders-loading .spin {
+      display:inline-block; width:36px; height:36px;
+      border:3px solid #e2e8f0; border-top-color:#0d9488;
+      border-radius:50%; animation:spin 0.8s linear infinite; margin-bottom:12px;
+    }
+    @keyframes spin { to { transform:rotate(360deg); } }
+
+    .orders-empty {
+      text-align:center; padding:60px 20px; color:#64748b;
+    }
+    .orders-empty .empty-ico { font-size:56px; margin-bottom:16px; }
+    .orders-empty h3 { font-family:'Syne',sans-serif; font-size:20px; color:#0f172a; margin-bottom:8px; }
+
+    .order-card {
+      background:white; border:1.5px solid #e2e8f0; border-radius:16px;
+      padding:20px 24px; margin-bottom:16px; transition:all 0.2s;
+    }
+    .order-card:hover { border-color:#99f6e4; box-shadow:0 4px 20px rgba(13,148,136,0.1); }
+
+    .order-card-top {
+      display:flex; align-items:flex-start; justify-content:space-between;
+      margin-bottom:14px; flex-wrap:wrap; gap:10px;
+    }
+    .order-num { font-family:'Syne',sans-serif; font-size:16px; font-weight:800; color:#0f172a; }
+    .order-date { font-size:13px; color:#64748b; margin-top:3px; }
+
+    .order-status-pill {
+      padding:5px 14px; border-radius:20px; font-size:12px; font-weight:700;
+      text-transform:capitalize;
+    }
+    .status-pending   { background:#fef9c3; color:#854d0e; }
+    .status-confirmed { background:#dbeafe; color:#1e40af; }
+    .status-processing{ background:#ede9fe; color:#5b21b6; }
+    .status-shipped   { background:#e0f2fe; color:#0369a1; }
+    .status-delivered { background:#dcfce7; color:#15803d; }
+    .status-cancelled { background:#fee2e2; color:#dc2626; }
+
+    .order-items-row {
+      display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px;
+    }
+    .order-item-tag {
+      background:#f0fdfa; border:1px solid #ccfbf1; border-radius:8px;
+      padding:5px 10px; font-size:13px; color:#0f172a;
+      display:flex; align-items:center; gap:6px;
+    }
+    .order-item-qty { background:#0d9488; color:white; border-radius:5px; padding:1px 6px; font-size:11px; font-weight:700; }
+
+    .order-footer {
+      display:flex; align-items:center; justify-content:space-between;
+      padding-top:12px; border-top:1px solid #f1f5f9; flex-wrap:wrap; gap:8px;
+    }
+    .order-total { font-family:'Syne',sans-serif; font-size:17px; font-weight:800; color:#0d9488; }
+    .order-payment { font-size:12px; color:#64748b; }
+
+    .order-cancel-btn {
+      padding:6px 14px; border-radius:8px; border:1.5px solid #fee2e2;
+      background:transparent; color:#dc2626; font-size:12px; font-weight:600;
+      cursor:pointer; transition:all 0.2s;
+    }
+    .order-cancel-btn:hover { background:#fee2e2; }
+
+    /* ── Profile panel ── */
+    .profile-card {
+      background:white; border:1.5px solid #e2e8f0; border-radius:16px; padding:32px;
+      max-width:560px;
+    }
+    .profile-avatar {
+      width:80px; height:80px; border-radius:50%;
+      background:linear-gradient(135deg,#0d9488,#14b8a6);
+      display:flex; align-items:center; justify-content:center;
+      font-size:32px; color:white; font-family:'Syne',sans-serif; font-weight:800;
+      margin-bottom:20px;
+    }
+    .profile-name { font-family:'Syne',sans-serif; font-size:22px; font-weight:800; color:#0f172a; margin-bottom:4px; }
+    .profile-email { font-size:14px; color:#64748b; margin-bottom:24px; }
+    .profile-info-row { display:flex; gap:8px; align-items:center; padding:12px 0; border-bottom:1px solid #f1f5f9; font-size:14px; color:#0f172a; }
+    .profile-info-row .pi-label { width:100px; color:#64748b; flex-shrink:0; }
+    .logout-btn {
+      margin-top:24px; padding:12px 24px; background:#fee2e2; color:#dc2626;
+      border:none; border-radius:10px; font-family:'Syne',sans-serif; font-weight:700;
+      cursor:pointer; transition:all 0.2s; font-size:14px;
+    }
+    .logout-btn:hover { background:#fecaca; }
+  </style>
+</head>
+<body class="dashboard-body">
+
+<div class="db-layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sb-logo">
+      <div class="logo-hex">⬡</div>
+      <span>Pharmora</span>
+    </div>
+    <nav class="sb-nav">
+      <div class="sb-label">Main</div>
+      <a href="#" class="sb-item active" data-panel="overview">
+        <span class="sb-ico">📊</span> Dashboard
+      </a>
+      <a href="#" class="sb-item" data-panel="orders">
+        <span class="sb-ico">📦</span> Orders
+      </a>
+      <a href="#" class="sb-item" data-panel="profile">
+        <span class="sb-ico">👤</span> My Profile
+      </a>
+      <div class="sb-label">Store</div>
+      <a href="index.html" class="sb-item">
+        <span class="sb-ico">💊</span> Browse Medicines
+      </a>
+      <a href="cart.html" class="sb-item">
+        <span class="sb-ico">🛒</span> My Cart
+      </a>
+      <div class="sb-footer-item">
+        <a href="index.html" class="sb-item sb-back">
+          <span class="sb-ico">←</span> Back to Website
+        </a>
+      </div>
+    </nav>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="db-main">
+
+    <!-- TOPBAR -->
+    <div class="db-topbar">
+      <div>
+        <h1 class="db-title" id="pageTitle">Dashboard</h1>
+        <p class="db-sub" id="pageSubtitle">Welcome back 👋</p>
+      </div>
+      <div class="topbar-right">
+        <div class="topbar-search">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input type="text" placeholder="Search…">
+        </div>
+        <div class="admin-avatar" id="avatarEl">?</div>
+      </div>
+    </div>
+
+    <!-- ══════════ PANEL: OVERVIEW ══════════ -->
+    <div class="panel active" id="panel-overview">
+      <div class="stats-grid">
+        <div class="stat-card sc-teal">
+          <div class="sc-icon">💊</div>
+          <div class="sc-info">
+            <div class="sc-val" id="stat-products" data-target="12">0</div>
+            <div class="sc-label">Total Products</div>
+          </div>
+          <div class="sc-trend up">↑ 4%</div>
+        </div>
+        <div class="stat-card sc-blue">
+          <div class="sc-icon">📦</div>
+          <div class="sc-info">
+            <div class="sc-val" id="stat-orders" data-target="0">0</div>
+            <div class="sc-label">My Orders</div>
+          </div>
+          <div class="sc-trend up">↑ 12%</div>
+        </div>
+        <div class="stat-card sc-purple">
+          <div class="sc-icon">⏳</div>
+          <div class="sc-info">
+            <div class="sc-val" id="stat-pending" data-target="0">0</div>
+            <div class="sc-label">Pending</div>
+          </div>
+          <div class="sc-trend up">Live</div>
+        </div>
+        <div class="stat-card sc-orange">
+          <div class="sc-icon">💰</div>
+          <div class="sc-info">
+            <div class="sc-val" id="stat-spent" data-prefix="₹" data-target="0">₹0</div>
+            <div class="sc-label">Total Spent</div>
+          </div>
+          <div class="sc-trend up">↑ 22%</div>
+        </div>
+      </div>
+
+      <div class="charts-grid">
+        <div class="chart-card">
+          <div class="chart-header">
+            <h3>Order Activity</h3>
+            <select class="chart-select"><option>All Time</option></select>
+          </div>
+          <div class="bar-chart" id="barChart"></div>
+        </div>
+        <div class="chart-card donut-card">
+          <div class="chart-header"><h3>Order Status</h3></div>
+          <div class="donut-wrap">
+            <div class="donut">
+              <svg viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="35" fill="none" stroke="#f0fdfa" stroke-width="18"/>
+                <circle cx="50" cy="50" r="35" fill="none" stroke="#0d9488" stroke-width="18" stroke-dasharray="65 35" stroke-dashoffset="25" class="donut-seg"/>
+                <circle cx="50" cy="50" r="35" fill="none" stroke="#06b6d4" stroke-width="18" stroke-dasharray="20 80" stroke-dashoffset="-40" class="donut-seg"/>
+                <circle cx="50" cy="50" r="35" fill="none" stroke="#a78bfa" stroke-width="18" stroke-dasharray="10 90" stroke-dashoffset="-60" class="donut-seg"/>
+                <circle cx="50" cy="50" r="35" fill="none" stroke="#f97316" stroke-width="18" stroke-dasharray="5 95" stroke-dashoffset="-70" class="donut-seg"/>
+              </svg>
+              <div class="donut-center"><strong id="donut-total">0</strong><small>Orders</small></div>
+            </div>
+            <div class="donut-legend">
+              <div class="dl-item"><span class="dl-dot" style="background:#0d9488"></span> Delivered <strong id="dl-delivered">0</strong></div>
+              <div class="dl-item"><span class="dl-dot" style="background:#06b6d4"></span> Pending <strong id="dl-pending">0</strong></div>
+              <div class="dl-item"><span class="dl-dot" style="background:#a78bfa"></span> Shipped <strong id="dl-shipped">0</strong></div>
+              <div class="dl-item"><span class="dl-dot" style="background:#f97316"></span> Cancelled <strong id="dl-cancelled">0</strong></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent orders -->
+      <div class="table-card">
+        <div class="table-header">
+          <h3>Recent Orders</h3>
+          <button class="view-all-btn" onclick="switchPanel('orders')">View All →</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Order #</th><th>Items</th><th>Amount</th><th>Date</th><th>Status</th></tr>
+            </thead>
+            <tbody id="recentOrdersBody">
+              <tr><td colspan="5" style="text-align:center;color:#64748b;padding:24px">Loading orders…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════ PANEL: ORDERS ══════════ -->
+    <div class="panel" id="panel-orders">
+      <div class="orders-panel-header">
+        <h2>My Orders</h2>
+        <a href="index.html" style="background:linear-gradient(135deg,#0d9488,#14b8a6);color:white;padding:10px 20px;border-radius:12px;text-decoration:none;font-family:'Syne',sans-serif;font-weight:700;font-size:14px;">+ New Order</a>
+      </div>
+      <div id="ordersContainer">
+        <div class="orders-loading">
+          <div class="spin"></div><br>Loading your orders…
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════ PANEL: PROFILE ══════════ -->
+    <div class="panel" id="panel-profile">
+      <div class="profile-card">
+        <div class="profile-avatar" id="profileAvatar">?</div>
+        <div class="profile-name" id="profileName">—</div>
+        <div class="profile-email" id="profileEmail">—</div>
+        <div class="profile-info-row"><span class="pi-label">Role</span><span id="profileRole">User</span></div>
+        <div class="profile-info-row"><span class="pi-label">Member since</span><span id="profileJoined">—</span></div>
+        <button class="logout-btn" onclick="logout()">🚪 Sign Out</button>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+const API = 'http://localhost:5000';
+let allOrders = [];
+
+// ── Auth ──────────────────────────────────────────────────────────
+const user  = JSON.parse(localStorage.getItem('pharmora_user') || localStorage.getItem('user') || 'null');
+const token = localStorage.getItem('pharmora_token');
+
+function logout() {
+  localStorage.removeItem('pharmora_user');
+  localStorage.removeItem('pharmora_token');
+  localStorage.removeItem('user');
+  window.location.href = 'index.html';
+}
+
+// ── Init ──────────────────────────────────────────────────────────
+window.addEventListener('load', async () => {
+  // Set user info
+  if (user) {
+    const initial = (user.name || user.email || 'U')[0].toUpperCase();
+    document.getElementById('avatarEl').textContent     = initial;
+    document.getElementById('profileAvatar').textContent= initial;
+    document.getElementById('profileName').textContent  = user.name  || '—';
+    document.getElementById('profileEmail').textContent = user.email || '—';
+    document.getElementById('profileRole').textContent  = user.role  || 'user';
+    document.getElementById('pageSubtitle').textContent = `Welcome back, ${user.name || 'there'} 👋`;
+  }
+
+  animateCounters();
+  buildBarChart();
+  await loadOrders();
+
+  // Auto-switch to orders if coming from order-success
+  const params = new URLSearchParams(location.search);
+  if (params.get('tab') === 'orders') switchPanel('orders');
+});
+
+// ── Sidebar navigation ────────────────────────────────────────────
+document.querySelectorAll('.sb-item[data-panel]').forEach(item => {
+  item.addEventListener('click', e => {
+    e.preventDefault();
+    switchPanel(item.dataset.panel);
+  });
+});
+
+function switchPanel(name) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.sb-item').forEach(i => i.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  document.querySelector(`[data-panel="${name}"]`)?.classList.add('active');
+
+  const titles = { overview:'Dashboard', orders:'My Orders', profile:'My Profile' };
+  document.getElementById('pageTitle').textContent = titles[name] || 'Dashboard';
+
+  if (name === 'orders') renderOrdersPanel();
+}
+
+// ── Load orders from API ──────────────────────────────────────────
+async function loadOrders() {
+  try {
+    const res  = await fetch(`${API}/api/orders/my`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      allOrders = data.orders || [];
+    }
+  } catch (err) {
+    // Demo fallback — check localStorage for last order
+    const lastOrder = JSON.parse(localStorage.getItem('pharmora_last_order') || 'null');
+    if (lastOrder) allOrders = [lastOrder];
+  }
+
+  updateOverviewStats();
+  renderRecentOrdersTable();
+}
+
+// ── Overview stats ────────────────────────────────────────────────
+function updateOverviewStats() {
+  const totalOrders = allOrders.length;
+  const pending     = allOrders.filter(o => ['pending','confirmed','processing','shipped'].includes(o.status)).length;
+  const totalSpent  = allOrders.reduce((s, o) => s + parseFloat(o.total_amount || 0), 0);
+  const delivered   = allOrders.filter(o => o.status === 'delivered').length;
+  const shipped     = allOrders.filter(o => o.status === 'shipped').length;
+  const cancelled   = allOrders.filter(o => o.status === 'cancelled').length;
+
+  animateVal('stat-orders',  totalOrders);
+  animateVal('stat-pending', pending);
+  animateVal('stat-spent',   Math.round(totalSpent), '₹');
+  animateVal('stat-products',12);
+
+  document.getElementById('donut-total').textContent    = totalOrders;
+  document.getElementById('dl-delivered').textContent   = delivered;
+  document.getElementById('dl-pending').textContent     = pending;
+  document.getElementById('dl-shipped').textContent     = shipped;
+  document.getElementById('dl-cancelled').textContent   = cancelled;
+}
+
+function animateVal(id, target, prefix='') {
+  const el = document.getElementById(id);
+  if (!el) return;
+  let cur = 0;
+  const step = Math.ceil(Math.max(target, 1) / 50);
+  const t = setInterval(() => {
+    cur = Math.min(cur + step, target);
+    el.textContent = prefix + (prefix ? cur.toLocaleString('en-IN') : cur);
+    if (cur >= target) clearInterval(t);
+  }, 20);
+}
+
+// ── Recent orders table (overview) ───────────────────────────────
+function renderRecentOrdersTable() {
+  const tbody = document.getElementById('recentOrdersBody');
+  if (!allOrders.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#64748b;padding:24px">No orders yet. <a href="index.html" style="color:#0d9488">Browse medicines →</a></td></tr>';
+    return;
+  }
+  tbody.innerHTML = allOrders.slice(0, 5).map(o => {
+    const itemNames = (o.items || []).map(i => i.name).join(', ') || '—';
+    const date = new Date(o.created_at).toLocaleDateString('en-IN', { day:'numeric', month:'short' });
+    return `
+      <tr>
+        <td><strong>${o.order_number || '#' + o.id}</strong></td>
+        <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${itemNames}</td>
+        <td>₹${o.total_amount || 0}</td>
+        <td>${date}</td>
+        <td><span class="badge ${statusClass(o.status)}">${o.status || 'pending'}</span></td>
+      </tr>`;
+  }).join('');
+}
+
+// ── Orders panel ─────────────────────────────────────────────────
+function renderOrdersPanel() {
+  const container = document.getElementById('ordersContainer');
+  if (!allOrders.length) {
+    container.innerHTML = `
+      <div class="orders-empty">
+        <div class="empty-ico">📦</div>
+        <h3>No orders yet</h3>
+        <p>Browse our medicines and place your first order!</p>
+        <a href="index.html" style="display:inline-block;margin-top:20px;padding:12px 28px;background:linear-gradient(135deg,#0d9488,#14b8a6);color:white;border-radius:12px;text-decoration:none;font-family:'Syne',sans-serif;font-weight:700;">Browse Medicines</a>
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = allOrders.map(o => {
+    const date = new Date(o.created_at).toLocaleString('en-IN', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+    const items = (o.items || []);
+    const canCancel = ['pending','confirmed'].includes(o.status);
+
+    return `
+      <div class="order-card" id="oc-${o.id}">
+        <div class="order-card-top">
+          <div>
+            <div class="order-num">${o.order_number || '#' + o.id}</div>
+            <div class="order-date">📅 ${date}</div>
+          </div>
+          <span class="order-status-pill status-${o.status}">${statusLabel(o.status)}</span>
+        </div>
+
+        <div class="order-items-row">
+          ${items.length
+            ? items.map(i => `<span class="order-item-tag">💊 ${i.name} <span class="order-item-qty">×${i.qty || i.quantity || 1}</span></span>`).join('')
+            : '<span style="color:#94a3b8;font-size:13px">No item details</span>'
+          }
+        </div>
+
+        <div class="order-footer">
+          <div>
+            <div class="order-total">₹${o.total_amount || 0}</div>
+            <div class="order-payment">${paymentLabel(o.payment_method)} · ${o.payment_status || 'pending'}</div>
+          </div>
+          ${canCancel ? `<button class="order-cancel-btn" onclick="cancelOrder(${o.id})">Cancel Order</button>` : ''}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ── Cancel order ─────────────────────────────────────────────────
+async function cancelOrder(orderId) {
+  if (!confirm('Are you sure you want to cancel this order?')) return;
+  try {
+    const res = await fetch(`${API}/api/orders/${orderId}/cancel`, {
+      method:  'PATCH',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      const o = allOrders.find(x => x.id === orderId);
+      if (o) o.status = 'cancelled';
+      renderOrdersPanel();
+      renderRecentOrdersTable();
+      updateOverviewStats();
+    } else {
+      alert(data.message || 'Could not cancel order.');
+    }
+  } catch (err) {
+    // Demo fallback
+    const o = allOrders.find(x => x.id === orderId);
+    if (o) { o.status = 'cancelled'; renderOrdersPanel(); }
+  }
+}
+
+// ── Helpers ───────────────────────────────────────────────────────
+function statusClass(s) {
+  const m = { pending:'pending', confirmed:'processing', processing:'processing', shipped:'shipped', delivered:'completed', cancelled:'cancelled' };
+  return m[s] || 'pending';
+}
+function statusLabel(s) {
+  const m = { pending:'⏳ Pending', confirmed:'✓ Confirmed', processing:'⚙️ Processing', shipped:'🚚 Shipped', delivered:'✅ Delivered', cancelled:'✕ Cancelled' };
+  return m[s] || s;
+}
+function paymentLabel(m) {
+  return m === 'cod' ? 'Cash on Delivery' : m === 'upi' ? 'UPI' : m === 'online' ? 'Online' : 'COD';
+}
+
+// ── Counter animation ─────────────────────────────────────────────
+function animateCounters() {
+  document.querySelectorAll('.sc-val[data-target]').forEach(el => {
+    const target = parseInt(el.dataset.target) || 0;
+    const prefix = el.dataset.prefix || '';
+    let cur = 0;
+    const step = Math.ceil(Math.max(target,1)/60);
+    const t = setInterval(() => {
+      cur = Math.min(cur + step, target);
+      el.textContent = prefix + (prefix ? cur.toLocaleString('en-IN') : cur);
+      if (cur >= target) clearInterval(t);
+    }, 20);
+  });
+}
+
+// ── Bar chart ─────────────────────────────────────────────────────
+function buildBarChart() {
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul'];
+  const vals   = [2,3,1,4,2,3,allOrders.length || 1];
+  const max    = Math.max(...vals, 1);
+  document.getElementById('barChart').innerHTML = vals.map((v, i) => `
+    <div class="bar-group">
+      <div class="bar-col">
+        <div class="bar-fill" style="height:0%;animation:barGrow 0.7s ${i*0.1}s ease forwards;--target:${(v/max*100)}%"></div>
+      </div>
+      <div class="bar-label">${months[i]}</div>
+    </div>`).join('');
+
+  
+}
+
+function addToCart(name, price){
+
+let cart = JSON.parse(localStorage.getItem("pharmora_cart")) || [];
+
+cart.push({
+  name: name,
+  price: price,
+  qty: 1
+});
+
+localStorage.setItem("pharmora_cart", JSON.stringify(cart));
+
+alert("Medicine added to cart");
+
+}
+</script>
+</body>
+</html>

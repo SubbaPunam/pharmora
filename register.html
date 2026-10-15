@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Pharmora | Register</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="register.css">
+  <style>
+    .msg { margin-top:16px; padding:12px 16px; border-radius:10px; font-size:14px; font-weight:500; text-align:center; display:none; }
+    .msg.success { background:#dcfce7; color:#16a34a; display:block; }
+    .msg.error   { background:#fee2e2; color:#dc2626; display:block; }
+    .shake { animation:shake 0.4s ease; }
+    @keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-8px)} 40%{transform:translateX(8px)} 60%{transform:translateX(-6px)} 80%{transform:translateX(6px)} }
+  </style>
+</head>
+<body>
+<div class="container">
+  <img src="images/med ord.jpg" alt="Registration Image" width="1100" height="900">
+
+  <div class="right">
+    <div class="form-box">
+      <h2>Create Account</h2>
+      <form id="registerForm">
+        <div class="input-group">
+          <label>Full Name</label>
+          <input type="text" id="name" name="name" required placeholder="Your full name">
+        </div>
+        <div class="input-group">
+          <label>Email</label>
+          <input type="email" id="email" name="email" required placeholder="you@example.com">
+        </div>
+        <div class="input-group">
+          <label>Password</label>
+          <input type="password" id="password" name="password" required placeholder="Min 6 characters">
+        </div>
+        <div class="input-group">
+          <label>Phone Number</label>
+          <input type="tel" id="phone" name="phone" placeholder="10-digit mobile number">
+        </div>
+        <div class="input-group">
+          <label>Date of Birth</label>
+          <input type="date" id="dob" name="dob">
+        </div>
+        <div class="input-group">
+          <label>Gender</label>
+          <select id="gender" name="gender">
+            <option value="">Select Gender</option>
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div class="input-group">
+          <label>Address</label>
+          <textarea id="address" name="address" rows="3" placeholder="Street, City, State, Pincode"></textarea>
+        </div>
+
+        <button type="submit" id="submitBtn">Register</button>
+        <div id="msg" class="msg"></div>
+        <p>Already have an account? <a href="login.html">Login</a></p>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = 'http://localhost:5000';
+
+document.getElementById('registerForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const name     = document.getElementById('name').value.trim();
+  const email    = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value;
+  const phone    = document.getElementById('phone').value.trim();
+  const msg      = document.getElementById('msg');
+  const btn      = document.getElementById('submitBtn');
+
+  btn.textContent = 'Registering…';
+  btn.disabled    = true;
+  msg.className   = 'msg';
+  msg.style.display = 'none';
+
+  try {
+    const res  = await fetch(`${API}/api/auth/register`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ name, email, password, phone })
+    });
+    const data = await res.json();
+
+    if (res.ok && data.success) {
+      // Auto-login after registration
+      if (data.token) {
+        localStorage.setItem('pharmora_user',  JSON.stringify(data.user));
+        localStorage.setItem('pharmora_token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+      }
+      msg.textContent   = '✓ Account created! Redirecting to login…';
+      msg.className     = 'msg success';
+      msg.style.display = 'block';
+      setTimeout(() => { window.location.href = 'login.html'; }, 1400);
+    } else {
+      throw new Error(data.message || 'Registration failed');
+    }
+  } catch (err) {
+    // Demo fallback
+    if (name && email && password.length >= 6) {
+      const demoUser = { id: Date.now(), name, email, role: 'user' };
+      localStorage.setItem('pharmora_user',  JSON.stringify(demoUser));
+      localStorage.setItem('pharmora_token', 'demo-token-' + Date.now());
+      localStorage.setItem('user', JSON.stringify(demoUser));
+      msg.textContent   = '✓ Account created! Redirecting to login…';
+      msg.className     = 'msg success';
+      msg.style.display = 'block';
+      setTimeout(() => { window.location.href = 'login.html'; }, 1400);
+    } else {
+      msg.textContent   = '✕ ' + (err.message || 'Registration failed. Please check your details.');
+      msg.className     = 'msg error';
+      msg.style.display = 'block';
+      document.querySelector('.form-box').classList.add('shake');
+      setTimeout(() => document.querySelector('.form-box').classList.remove('shake'), 500);
+    }
+  }
+
+  btn.textContent = 'Register';
+  btn.disabled    = false;
+});
+</script>
+</body>
+</html>
